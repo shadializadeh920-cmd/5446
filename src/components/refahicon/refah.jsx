@@ -11,7 +11,7 @@ export const RefahIcon = ({ width = "100%", height = "100%", fill }) => (
     <defs>
       <linearGradient
         id="linear-gradient"
-        x1="203.49"
+        x1="203.4svg9"
         y1="5.53"
         x2="251.34"
         y2="76.81"
