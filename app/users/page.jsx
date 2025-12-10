@@ -3,6 +3,10 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DynamicTable from "../dynamictable/page";
+import Register from "../register/page";
+import { Button } from "antd";
+import { DeleteOutlined } from "@ant-design/icons";
+import Search from "../search/page";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
@@ -63,7 +67,37 @@ const UsersPage = () => {
 
   return (
     <div>
-      <h1>لیست کاربران</h1>
+      <div className="w-full border-b border-b-zinc-400 p-4 flex items-center justify-between flex-row-reverse">
+        <h1 className="font-bold text-right">کاربران</h1>
+
+        <div className="flex gap-2 flex-row-reverse">
+          <Button
+            type="primary"
+            className="!px-3 !py-1   !bg-green-300 !border-green-600 !text-green-600 rounded"
+            onClick={() => router.push("/register")}
+          >
+            تعریف کاربر
+          </Button>
+          <Button
+            type="primary"
+            className="!px-3 !py-1  !bg-purple-400 !text-purple-600 !border-purple-600 rounded"
+            onClick={() => handleDelete(record.id)}
+          >
+            تغییر نقش
+          </Button>
+          <Button
+            type="primary"
+            className="!px-3 !py-1  !bg-red-300 !border-rose-700 !text-rose-700 rounded"
+            onClick={() => handleDelete(record.id)}
+          >
+            تغییر رمز
+          </Button>
+        </div>
+      </div>
+      <div className=" ">
+        <Search />
+      </div>
+
       <DynamicTable />
     </div>
   );
