@@ -1,4 +1,4 @@
-import styles from "./styles/globals.css";
+import styles from "../styles/globals.css";
 import "antd/dist/reset.css";
 import UsersPage from "./Users/page";
 

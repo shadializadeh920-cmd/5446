@@ -6,11 +6,11 @@ import { CloseOutlined } from "@ant-design/icons";
 
 import Cookies from "js-cookie";
 
-export default function Edit() {
+export default function Edit({ userId, onClose, onSuccess }) {
   const [mounted, setMounted] = useState(false);
   const [options, setOptions] = useState([]);
   const [selected, setSelected] = useState("");
-  const [isOpen, setIsOpen] = useState(true);
+
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
@@ -18,7 +18,7 @@ export default function Edit() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const token = Cookies.get("token");
@@ -112,8 +112,8 @@ export default function Edit() {
   return (
     <>
       <Modal
-        open={isOpen}
-        onCancel={() => setIsOpen(false)}
+        open={!!userId}
+        onCancel={onClose}
         closeIcon={<CloseOutlined />}
         footer={null}
       >

@@ -2,19 +2,25 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import DynamicTable from "../dynamictable/page";
-import Register from "../register/page";
-import { Button } from "antd";
-import { DeleteOutlined } from "@ant-design/icons";
-import Search from "../search/page";
 
+import { Button } from "antd";
+import Search from "../../components/search/Search";
+import DynamicTable from "../../components/dynamictable/DynamicTable";
+import Edit from "../../components/edit/Edit";
+import Swal from "sweetalert2";
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
+  const [editUserId, setEditUserId] = useState(null);
   const USERS_API_URL = "http://185.205.203.42:7000/api/user";
+  const getAuthToken = () => {
+    if (typeof document === "undefined") return null;
+
+    const match = document.cookie.match(/(?:^|; )token=([^;]+)/);
+    return match ? match[1] : null;
+  };
 
   const fetchUsers = async () => {
     const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
@@ -65,6 +71,59 @@ const UsersPage = () => {
   if (error) return <div style={{ color: "red" }}>خطا: {error}</div>;
   if (users.length === 0) return <div>هیچ کاربری یافت نشد.</div>;
 
+  const handleEdit = (id) => {
+    setEditUserId(id);
+  };
+  const handleDelete = async (record) => {
+    const result = await Swal.fire({
+      title: "هشدار",
+      text: "بعد از حذف این سطر امکان بازگردانی نمی‌باشد",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "بله",
+      cancelButtonText: "انصراف",
+      buttonsStyling: false,
+      customClass: {
+        actions: "flex gap-3 justify-center",
+        confirmButton: "bg-blue-500 text-white rounded px-4 py-2",
+        cancelButton: "bg-red-500 text-white rounded px-4 py-2",
+      },
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = getAuthToken();
+
+      const res = await fetch(`${USERS_API_URL}/${record.id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("delete failed");
+      }
+
+      setUsers((prev) => prev.filter((u) => u.id !== record.id));
+
+      await Swal.fire({
+        title: "موفقیت",
+        text: "کاربر با موفقیت حذف شد",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+    } catch (err) {
+      Swal.fire({
+        title: "خطا",
+        text: "حذف انجام نشد",
+        icon: "error",
+      });
+    }
+  };
+
   return (
     <div>
       <div className="w-full border-b border-b-zinc-400 p-4 flex items-center justify-between flex-row-reverse">
@@ -96,9 +155,20 @@ const UsersPage = () => {
       </div>
       <div className=" ">
         <Search />
-      </div>
+        <DynamicTable
+          data={users}
+          onEdit={(id) => setEditUserId(id)}
+          onDelete={handleDelete}
+        />
 
-      <DynamicTable />
+        {editUserId && (
+          <Edit
+            userId={editUserId}
+            onClose={() => setEditUserId(null)}
+            onSuccess={fetchUsers}
+          />
+        )}
+      </div>
     </div>
   );
 };

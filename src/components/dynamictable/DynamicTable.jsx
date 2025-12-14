@@ -3,19 +3,21 @@ import { Table, Spin, Alert, Button, Switch } from "antd";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import Edit from "../edit/Edit";
 
 const USER_API = "http://185.205.203.42:7000/api/user";
 const getAuthToken = () => {
   const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
   return cookieMatch ? cookieMatch[1] : null;
 };
-const DynamicTable = () => {
+const DynamicTable = ({ onDelete }) => {
+  const [editingUser, setEditingUser] = useState(null);
   const router = useRouter();
-  const handleEdit = (user) => {
-    console.log("ویرایش کاربر:", user);
+  const onEdit = (recordId) => {
+    console.log("ویرایش کاربر:", recordId);
 
-    setEditingUser(user);
-    setIsModalOpen(true);
+    setEditingUser(recordId);
+    // setIsModalOpen(true);
   };
 
   const columns = [
@@ -63,15 +65,15 @@ const DynamicTable = () => {
               type="primary"
               icon={<EditOutlined />}
               className="!px-3 !py-1 !border-amber-700 !bg-orange-300 !text-amber-700 rounded"
-              onClick={() => router.push(`/api/edit/${record.id}`)}
+              onClick={() => onEdit(record.id)}
             >
               ویرایش
             </Button>
             <Button
+              onClick={() => onDelete(record, setUsers)}
               type="primary"
               icon={<DeleteOutlined />}
               className="!px-3 !py-1 !bg-red-300 !border-rose-700 !text-rose-700 rounded"
-              onClick={() => handleDelete(record.id)}
             >
               حذف
             </Button>
@@ -161,6 +163,14 @@ const DynamicTable = () => {
         style={{ direction: "rtl" }}
         rowKey="id"
       />
+      {editingUser && (
+        <Edit
+          userId={editingUser}
+          onClose={() => {
+            setEditingUser(null);
+          }}
+        />
+      )}
     </div>
   );
 };
