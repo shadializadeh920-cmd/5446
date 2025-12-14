@@ -1,13 +1,10 @@
 import "../styles/globals.css";
 import "antd/dist/reset.css";
-import QueryProvider from "../../src/provider/QueryProvider";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="fa">
-      <body>
-        <QueryProvider>{children}</QueryProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
