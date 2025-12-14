@@ -1,8 +1,8 @@
-import "../styles/globals.css";
+import styles from "../styles/globals.css";
 import "antd/dist/reset.css";
 import QueryProvider from "../../src/provider/QueryProvider";
 
-export default function RootLayout({ children }) {
+const RootLayout = ({ children }) => {
   return (
     <html lang="fa">
       <body>
@@ -10,4 +10,6 @@ export default function RootLayout({ children }) {
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

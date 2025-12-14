@@ -1,71 +1,55 @@
 "use client";
-
-import React, { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-
+// import { getUsers, deleteUser } from "@/services/users";
 import { Button } from "antd";
 import Search from "../../components/search/Search";
 import DynamicTable from "../../components/dynamictable/DynamicTable";
 import Edit from "../../components/edit/Edit";
 import Swal from "sweetalert2";
+import ChangeRoleModal from "@/src/components/changeRole/ChangeRole";
+
 const UsersPage = () => {
-  const [users, setUsers] = useState([]);
-  const [error, setError] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const [roleModalOpen, setRoleModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [editUserId, setEditUserId] = useState(null);
-  const USERS_API_URL = "http://185.205.203.42:7000/api/user";
-  const getAuthToken = () => {
-    if (typeof document === "undefined") return null;
-
-    const match = document.cookie.match(/(?:^|; )token=([^;]+)/);
-    return match ? match[1] : null;
-  };
-
-  const fetchUsers = async () => {
-    const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
-    const authToken = cookieMatch ? cookieMatch[1] : null;
-
-    if (!authToken) {
-      setError("شما وارد نشده‌اید. لطفاً مجدداً وارد شوید.");
-      router.push("/login");
-      return;
-    }
-
-    try {
-      const response = await fetch(USERS_API_URL, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-          "Content-Type": "application/json",
-        },
+  const {
+    data: users = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["users"],
+    queryFn: getUsers,
+  });
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries(["users"]);
+      Swal.fire({
+        title: "موفقیت",
+        text: "کاربر با موفقیت حذف شد",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
       });
+    },
+    onError: () => {
+      Swal.fire({
+        title: "خطا",
+        text: "حذف انجام نشد",
+        icon: "error",
+      });
+    },
+  });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          setError("توکن شما منقضی شده است. لطفاً دوباره وارد شوید.");
-          router.push("/login");
-        } else if (response.status === 404) {
-          setError("آدرس API پیدا نشد. لطفاً endpoint را بررسی کنید.");
-        } else {
-          const data = await response.json().catch(() => ({}));
-          setError(data.message || `خطای سرور: ${response.status}`);
-        }
-        return;
-      }
-
-      const result = await response.json();
-      setUsers(result.data || []);
-    } catch (err) {
-      setError(`مشکل در اتصال شبکه: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
+  const handleChangeRole = (user) => {
+    setSelectedUser(user);
+    setRoleModalOpen(true);
   };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   if (isLoading) return <div>در حال بارگذاری لیست کاربران...</div>;
   if (error) return <div style={{ color: "red" }}>خطا: {error}</div>;
@@ -82,7 +66,7 @@ const UsersPage = () => {
       showCancelButton: true,
       confirmButtonText: "بله",
       cancelButtonText: "انصراف",
-      buttonsStyling: false,
+
       customClass: {
         actions: "flex gap-3 justify-center",
         confirmButton: "bg-blue-500 text-white rounded px-4 py-2",
@@ -91,37 +75,7 @@ const UsersPage = () => {
     });
 
     if (!result.isConfirmed) return;
-
-    try {
-      const token = getAuthToken();
-
-      const res = await fetch(`${USERS_API_URL}/${record.id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("delete failed");
-      }
-
-      setUsers((prev) => prev.filter((u) => u.id !== record.id));
-
-      await Swal.fire({
-        title: "موفقیت",
-        text: "کاربر با موفقیت حذف شد",
-        icon: "success",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-    } catch (err) {
-      Swal.fire({
-        title: "خطا",
-        text: "حذف انجام نشد",
-        icon: "error",
-      });
-    }
+    deleteMutation.mutate(record.id);
   };
 
   return (
@@ -147,7 +101,6 @@ const UsersPage = () => {
           <Button
             type="primary"
             className="!px-3 !py-1  !bg-red-300 !border-rose-700 !text-rose-700 rounded"
-            onClick={() => handleDelete(record.id)}
           >
             تغییر رمز
           </Button>
@@ -155,17 +108,27 @@ const UsersPage = () => {
       </div>
       <div className=" ">
         <Search />
+        {roleModalOpen && selectedUser && (
+          <ChangeRoleModal
+            open={roleModalOpen}
+            user={selectedUser}
+            onClose={() => setRoleModalOpen(false)}
+            onSuccess={() => queryClient.invalidateQueries(["users"])}
+          />
+        )}
+
         <DynamicTable
           data={users}
           onEdit={(id) => setEditUserId(id)}
           onDelete={handleDelete}
+          onChangeRole={handleChangeRole}
         />
 
         {editUserId && (
           <Edit
             userId={editUserId}
             onClose={() => setEditUserId(null)}
-            onSuccess={fetchUsers}
+            onSuccess={() => queryClient.invalidateQueries(["users"])}
           />
         )}
       </div>

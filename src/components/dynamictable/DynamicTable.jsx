@@ -1,24 +1,12 @@
 "use client";
-import { Table, Spin, Alert, Button, Switch } from "antd";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+
+import { Table, Button, Switch } from "antd";
+import { useState } from "react";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import Edit from "../edit/Edit";
 
-const USER_API = "http://185.205.203.42:7000/api/user";
-const getAuthToken = () => {
-  const cookieMatch = document.cookie.match(/(?:^|; )token=([^;]+)/);
-  return cookieMatch ? cookieMatch[1] : null;
-};
-const DynamicTable = ({ onDelete }) => {
+const DynamicTable = ({ data, onDelete, onChangeRole }) => {
   const [editingUser, setEditingUser] = useState(null);
-  const router = useRouter();
-  const onEdit = (recordId) => {
-    console.log("ویرایش کاربر:", recordId);
-
-    setEditingUser(recordId);
-    // setIsModalOpen(true);
-  };
 
   const columns = [
     {
@@ -28,7 +16,12 @@ const DynamicTable = ({ onDelete }) => {
       align: "center",
       width: 80,
     },
-    { title: "نام", dataIndex: "fullname", key: "fullname", align: "center" },
+    {
+      title: "نام",
+      dataIndex: "fullname",
+      key: "fullname",
+      align: "center",
+    },
     {
       title: "نام کاربری",
       dataIndex: "username",
@@ -37,22 +30,18 @@ const DynamicTable = ({ onDelete }) => {
     },
     {
       title: "نقش",
-      dataIndex: "role",
       key: "role",
       align: "center",
-      render: (role) => role || "—",
+      render: (_, record) => {
+        const roles = record.roles || [];
+        return roles.length ? roles[roles.length - 1].name : "-";
+      },
     },
     {
       title: "وضعیت",
-      dataIndex: "active",
       key: "active",
       align: "center",
-      render: (_, record) => (
-        <Switch
-          checked={record.active}
-          onChange={(checked) => handleChangeStatus(record.id, checked)}
-        />
-      ),
+      render: (_, record) => <Switch checked={record.active} />,
     },
     {
       title: "عملیات",
@@ -65,30 +54,30 @@ const DynamicTable = ({ onDelete }) => {
               type="primary"
               icon={<EditOutlined />}
               className="!px-3 !py-1 !border-amber-700 !bg-orange-300 !text-amber-700 rounded"
-              onClick={() => onEdit(record.id)}
+              onClick={() => setEditingUser(record.id)}
             >
               ویرایش
             </Button>
+
             <Button
-              onClick={() => onDelete(record, setUsers)}
               type="primary"
               icon={<DeleteOutlined />}
               className="!px-3 !py-1 !bg-red-300 !border-rose-700 !text-rose-700 rounded"
+              onClick={() => onDelete(record)}
             >
               حذف
             </Button>
           </div>
+
           <div className="flex gap-2">
             <Button
               className="!px-3 !py-1 !bg-green-300 !border-green-600 !text-green-600 rounded"
-              onClick={() => handleChangeRole(record)}
+              onClick={() => onChangeRole(record)}
             >
               تغییر نقش
             </Button>
-            <Button
-              className="!px-3 !py-1 !bg-purple-400 !text-purple-600 !border-purple-600 rounded"
-              onClick={() => handleChangePassword(record)}
-            >
+
+            <Button className="!px-3 !py-1 !bg-purple-400 !text-purple-600 !border-purple-600 rounded">
               تغییر رمز
             </Button>
           </div>
@@ -96,82 +85,20 @@ const DynamicTable = ({ onDelete }) => {
       ),
     },
   ];
-  useEffect(() => {
-    setUsers([
-      {
-        id: 1,
-        fullname: "مدیر سامانه",
-        username: "Admin",
-        role: "Admin",
-        active: true,
-      },
-    ]);
-  }, []);
-
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  useEffect(() => {
-    const fetchUsers = async () => {
-      const token = getAuthToken();
-      if (!token) {
-        setError("token mojood nist");
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await fetch(USER_API, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (!response.ok) throw new Error(`خطا: ${response.status}`);
-        const data = await response.json();
-        console.log("Response from API:", data);
-        if (data.data && Array.isArray(data.data)) {
-          setUsers(data.data);
-        }
-      } catch (error) {
-        console.log(error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
-  if (loading)
-    return (
-      <div>
-        <Spin />
-      </div>
-    );
-  if (error)
-    return (
-      <div>
-        <Alert />
-      </div>
-    );
 
   return (
-    <div>
+    <>
       <Table
-        dataSource={users}
+        dataSource={data}
         columns={columns}
-        style={{ direction: "rtl" }}
         rowKey="id"
+        style={{ direction: "rtl" }}
       />
+
       {editingUser && (
-        <Edit
-          userId={editingUser}
-          onClose={() => {
-            setEditingUser(null);
-          }}
-        />
+        <Edit userId={editingUser} onClose={() => setEditingUser(null)} />
       )}
-    </div>
+    </>
   );
 };
 
